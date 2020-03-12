@@ -45,9 +45,10 @@ namespace ConsolsaveTicketMasterDataeApp1
 		static void Main(string[] args)
 		{
 			saveTicketmasterDataProgram p = new saveTicketmasterDataProgram();
-			p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblTicketmasterVenue", Constr, @"C:\tempOutput\venueIDs\ticketmasterVenueIDs.csv");
-			p.getTicketmasterVenueEventJsonDump();
-			p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());
+		//	p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblTicketmasterVenue", Constr, @"C:\tempOutput\venueIDs\ticketmasterVenueIDs.csv");
+		//	p.getTicketmasterVenueEventJsonDump();
+		//	p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());
+			p.updateTblNewTicketMasterVenueEvent("hour");
 		}
 		private readonly string constr = Constr;
 		public string ticketmasterVenueJsonDirectory()
@@ -103,7 +104,33 @@ namespace ConsolsaveTicketMasterDataeApp1
 		{
 			run_pyScript(@"C:\Users\willb\source\repos\ticketDataCollection\pythonScripts\ticketmasterVenueEventJsonToFile.py");
 		}
-		
+		private void updateTblNewTicketMasterVenueEvent(string srcapeDateSpecificty = "minute")
+		{
+			string specifity = "";
+			if (srcapeDateSpecificty == "hour")
+			{
+				specifity = "CONCAT(DATEPART(DAY, scrapeDate), DATEPART(HOUR, scrapeDate))";
+			}
+			else
+			{
+				specifity = "CONCAT(DATEPART(DAY, scrapeDate), DATEPART(HOUR, scrapeDate), DATEPART(Minute, scrapeDate))";
+			}
+			string sqlstr = @$"
+				DROP TABLE [stubhubApi].[dbo].[tblNewTicketMasterVenueEvent]
+					SELECT *
+						INTO [stubhubApi].[dbo].[tblNewTicketMasterVenueEvent]
+						FROM [stubhubApi].[dbo].[tblTicketMasterVenueEvent]
+					WHERE {specifity}
+						IN (
+							SELECT TOP 1  {specifity}
+							FROM[stubhubApi].[dbo].[tblTicketMasterVenueEvent]
+							GROUP BY {specifity}
+							ORDER BY {specifity}
+						)";
+			runNonQuery(sqlstr, Constr);
+			Console.WriteLine("done updateing tblNewTicketMasterVenueEvent");
+
+		}
 		private void writeTicketmasterVenueEventJsonToDB(string tableName, string[] fpaths)
 		{
 			foreach (string f in fpaths)
@@ -172,25 +199,34 @@ namespace ConsolsaveTicketMasterDataeApp1
 
 		private void runNonQuery(string sqlstr, string constr)
 		{
-			using (SqlConnection connection = new SqlConnection(constr))
+			try
 			{
-				using (SqlCommand command = connection.CreateCommand())
+				using (SqlConnection connection = new SqlConnection(constr))
 				{
-					connection.Open();
-					//SqlParameter param = new SqlParameter();
-					//param.ParameterName = "@p1";
-					//param.Value = "'"+f+"'";
-					//cmd.Parameters.Add(param);
-					//command.Parameters.AddWithValue("@p0", f);
-					//command.Parameters.Add(param);
-					command.CommandText = sqlstr;
-					//command.Connection.Open();
-					command.ExecuteNonQuery();
-					connection.Close();
-					command.Dispose();
+					using (SqlCommand command = connection.CreateCommand())
+					{
+						connection.Open();
+						//SqlParameter param = new SqlParameter();
+						//param.ParameterName = "@p1";
+						//param.Value = "'"+f+"'";
+						//cmd.Parameters.Add(param);
+						//command.Parameters.AddWithValue("@p0", f);
+						//command.Parameters.Add(param);
+						command.CommandText = sqlstr;
+						//command.Connection.Open();
+						command.ExecuteNonQuery();
+						connection.Close();
+						command.Dispose();
+						
+					}
 				}
 			}
-		}
+			
+			catch (Exception e)
+			{
+				File.AppendAllText("errorLog.txt", e.ToString());
+			}
+}
 
 
 	}
