@@ -1,0 +1,3 @@
+# ticketDataCollection
+routines to collect logitutinal data for tickets to events in MA. Still Work in Progress....
+
