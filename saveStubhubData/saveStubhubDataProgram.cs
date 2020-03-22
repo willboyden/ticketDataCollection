@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -24,11 +25,23 @@ namespace saveStubhubData
 		static void Main(string[] args)
 		{
 			saveStubhubDataProgram p = new saveStubhubDataProgram();
-			p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblStubhubVenue", Constr, @"C:\tempOutput\venueIDs\stubhubVenueIDs.csv");
-			p.getStubhubVenueEventJsonDump();
-			p.writeStubhubVenueEventJsonToDB("tblStubhubVenueEvent", p.filePathsStubhubVenueEvent());
+			p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblStubhubVenue", Constr, @"C:\tempOutput\venueIDs\stubhubVenueIDs.csv");//undo
+			p.getStubhubVenueEventJsonDump();//undo
+			p.writeStubhubVenueEventJsonToDB("tblStubhubVenueEvent", p.filePathsStubhubVenueEvent());//undo
 			p.updateTblNewStubHubVenueEvent("minute");
+			
+			p.writeQueryToJson("select * from tblNewStubhubVenueEvent FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewStubhubVenueEvent.json", "tblNewStubhubVenueEvent");
+			p.writeQueryToJson("select * from tblStubhubVenue FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblStubhubVenue.json", "tblStubhubVenue");
+			p.writeQueryToJson("select * from tblStubhubCity FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblStubhubCity.json", "tblStubhubCity");
+			
+			p.writeQueryToCsv("select * from tblNewStubhubVenueEvent", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewStubhubVenueEvent.csv", "tblNewStubhubVenueEvent");
+			p.writeQueryToCsv("select * from tblStubhubVenue", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblStubhubVenue.csv", "tblStubhubVenue");
+			p.writeQueryToCsv("select * from tblStubhubCity", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblStubhubCity.csv", "tblStubhubCity");
+
 		}
+
+		
+
 		private void writeVenueIdsToCsv(string sqlqry, string constr, string csvpath)
 		{
 			string connectionSql = Constr;
@@ -56,6 +69,76 @@ namespace saveStubhubData
 				}
 			}
 		}
+
+		private void writeQueryToJson(string sqlqry, string jsonpath, string? tblName)//C:\Users\willb\source\repos\ticketDataCollection\outputdata
+		{
+			string connectionSql = Constr;
+			StreamWriter myFile = new StreamWriter(jsonpath);
+			using (SqlConnection connection = new SqlConnection(connectionSql))
+			{
+				SqlCommand command = new SqlCommand(sqlqry, connection);
+				connection.Open();
+				SqlDataReader reader = command.ExecuteReader();
+				try
+				{
+					while (reader.Read())
+					{
+						myFile.Write(reader[0]);
+					}
+					var tblNme = tblName != null ? tblName : "table";
+					Console.WriteLine($@"done writing {tblNme} to json file");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+				}
+				finally
+				{
+					reader.Close();
+					myFile.Close();
+				}
+			}
+		}
+
+		private void writeQueryToCsv(string sqlqry, string csvpath, string? tblName )//C:\Users\willb\source\repos\ticketDataCollection\outputdata
+		{
+			string connectionSql = Constr;
+			StreamWriter myFile = new StreamWriter(csvpath);
+			using (SqlConnection connection = new SqlConnection(connectionSql))
+			{
+				SqlCommand command = new SqlCommand(sqlqry, connection);
+				connection.Open();
+				SqlDataReader reader = command.ExecuteReader();
+				try
+				{
+					object[] output = new object[reader.FieldCount];
+
+					for (int i = 0; i < reader.FieldCount; i++)
+						output[i] = reader.GetName(i);
+
+					myFile.WriteLine(string.Join(",", output));
+
+					while (reader.Read())
+					{
+						reader.GetValues(output);
+						myFile.WriteLine(string.Join(",", output));
+					}
+					var tblNme = tblName != null ? tblName : "table";
+					Console.WriteLine($@"done writing {tblNme} to file");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+				}
+				finally
+				{
+					reader.Close();
+					myFile.Close();
+				}
+			}
+		}
+
+
 		private void run_pyScript(string fullFilepath)
 		{
 			Process p = new Process();
@@ -205,7 +288,7 @@ namespace saveStubhubData
 							ORDER BY {specifity} 
 						)";
 			runNonQuery(sqlstr, Constr);
-			Console.WriteLine("done");
+			Console.WriteLine("done updating tblNewStubHubVenueEvent");
 			
 		}
 

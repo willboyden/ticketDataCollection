@@ -45,12 +45,94 @@ namespace ConsolsaveTicketMasterDataeApp1
 		static void Main(string[] args)
 		{
 			saveTicketmasterDataProgram p = new saveTicketmasterDataProgram();
-		//	p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblTicketmasterVenue", Constr, @"C:\tempOutput\venueIDs\ticketmasterVenueIDs.csv");
-		//	p.getTicketmasterVenueEventJsonDump();
-		//	p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());
+			p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblTicketmasterVenue", Constr, @"C:\tempOutput\venueIDs\ticketmasterVenueIDs.csv");
+			p.getTicketmasterVenueEventJsonDump();
+			p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());
 			p.updateTblNewTicketMasterVenueEvent("hour");
+
+
+			//p.writeQueryToJson("select * from tblNewTicketMasterVenueEvent FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewTicketMasterVenueEvent.json", "tblNewTicketMasterVenueEvent");
+			//p.writeQueryToJson("select * from tblTicketMasterVenue FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblTicketMasterVenue.json", "tblTicketMasterVenue");
+
+
+			//p.writeQueryToCsv("select * from tblNewTicketMasterVenueEvent", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewTicketMasterVenueEvent.csv", "tblNewTicketMasterVenueEvent");
+			//p.writeQueryToCsv("select * from tblTicketMasterVenue", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblTicketMasterVenue.csv", "tblTicketMasterVenue");
+
+
+
+
 		}
 		private readonly string constr = Constr;
+
+		private void writeQueryToJson(string sqlqry, string jsonpath, string? tblName)//C:\Users\willb\source\repos\ticketDataCollection\outputdata
+		{
+			string connectionSql = Constr;
+			StreamWriter myFile = new StreamWriter(jsonpath);
+			using (SqlConnection connection = new SqlConnection(connectionSql))
+			{
+				SqlCommand command = new SqlCommand(sqlqry, connection);
+				connection.Open();
+				SqlDataReader reader = command.ExecuteReader();
+				try
+				{
+					while (reader.Read())
+					{
+						myFile.Write(reader[0]);
+					}
+					var tblNme = tblName != null ? tblName : "table";
+					Console.WriteLine($@"done writing {tblNme} to json file");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+				}
+				finally
+				{
+					reader.Close();
+					myFile.Close();
+				}
+			}
+		}
+
+		private void writeQueryToCsv(string sqlqry, string csvpath, string? tblName)//C:\Users\willb\source\repos\ticketDataCollection\outputdata
+		{
+			string connectionSql = Constr;
+			StreamWriter myFile = new StreamWriter(csvpath);
+			using (SqlConnection connection = new SqlConnection(connectionSql))
+			{
+				SqlCommand command = new SqlCommand(sqlqry, connection);
+				connection.Open();
+				SqlDataReader reader = command.ExecuteReader();
+				try
+				{
+					object[] output = new object[reader.FieldCount];
+
+					for (int i = 0; i < reader.FieldCount; i++)
+						output[i] = reader.GetName(i);
+
+					myFile.WriteLine(string.Join(",", output));
+
+					while (reader.Read())
+					{
+						reader.GetValues(output);
+						myFile.WriteLine(string.Join(",", output));
+					}
+					var tblNme = tblName != null ? tblName : "table";
+					Console.WriteLine($@"done writing {tblNme} to file");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+				}
+				finally
+				{
+					reader.Close();
+					myFile.Close();
+				}
+			}
+		}
+
+
 		public string ticketmasterVenueJsonDirectory()
 		{
 			string[] subdirectoryEntries = Directory.GetDirectories(@"C:\tempOutput\ticketmasterJsonDumps\Venue");
@@ -124,8 +206,8 @@ namespace ConsolsaveTicketMasterDataeApp1
 						IN (
 							SELECT TOP 1  {specifity}
 							FROM[stubhubApi].[dbo].[tblTicketMasterVenueEvent]
-							GROUP BY {specifity}
-							ORDER BY {specifity}
+							GROUP BY scrapeDate, {specifity}
+							ORDER BY scrapeDate DESC
 						)";
 			runNonQuery(sqlstr, Constr);
 			Console.WriteLine("done updateing tblNewTicketMasterVenueEvent");
