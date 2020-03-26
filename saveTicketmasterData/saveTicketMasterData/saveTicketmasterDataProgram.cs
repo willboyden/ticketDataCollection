@@ -215,7 +215,7 @@ namespace ConsolsaveTicketMasterDataeApp1
 							  ,[promoter_description]
 							  ,[ticketLimit]
 							 -- ,[classifications]
-							  ,[priceRanges]
+							--  ,[priceRanges]
 							 -- ,[_embedded_venues]
 							  ,[family]
 							  ,[segment_name]
