@@ -47,20 +47,13 @@ namespace ConsolsaveTicketMasterDataeApp1
 			saveTicketmasterDataProgram p = new saveTicketmasterDataProgram();
 			p.writeVenueIdsToCsv("SELECT distinct(id) as id from tblTicketmasterVenue", Constr, @"C:\tempOutput\venueIDs\ticketmasterVenueIDs.csv");
 			p.getTicketmasterVenueEventJsonDump();
-			p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());
-			p.updateTblNewTicketMasterVenueEvent("hour");
-
+			p.writeTicketmasterVenueEventJsonToDB("tblTicketmasterVenueEvent", p.filePathsTicketmasterVenueEvent());//writes to new table
+			p.updateTblNewTicketMasterVenueEvent("hour");//replaces old table
 
 			//p.writeQueryToJson("select * from tblNewTicketMasterVenueEvent FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewTicketMasterVenueEvent.json", "tblNewTicketMasterVenueEvent");
 			//p.writeQueryToJson("select * from tblTicketMasterVenue FOR JSON PATH", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblTicketMasterVenue.json", "tblTicketMasterVenue");
-
-
 			//p.writeQueryToCsv("select * from tblNewTicketMasterVenueEvent", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblNewTicketMasterVenueEvent.csv", "tblNewTicketMasterVenueEvent");
 			//p.writeQueryToCsv("select * from tblTicketMasterVenue", @"C:\Users\willb\source\repos\ticketDataCollection\outputdata\tblTicketMasterVenue.csv", "tblTicketMasterVenue");
-
-
-
-
 		}
 		private readonly string constr = Constr;
 
@@ -224,7 +217,6 @@ namespace ConsolsaveTicketMasterDataeApp1
 							  ,[priceRanges_min]
 							  ,[priceRanges_max]
 							  ,[venue_id]
-							  into [tblNewTicketMasterVenueEvent3]
 						INTO [stubhubApi].[dbo].[tblNewTicketMasterVenueEvent]
 						FROM [stubhubApi].[dbo].[tblTicketMasterVenueEvent]
 					WHERE {specifity}
@@ -333,7 +325,7 @@ namespace ConsolsaveTicketMasterDataeApp1
 			{
 				File.AppendAllText("errorLog.txt", e.ToString());
 			}
-}
+		}
 
 
 	}
